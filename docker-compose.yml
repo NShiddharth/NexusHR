@@ -1,0 +1,177 @@
+services:
+  # Infrastructure Services
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexus_user
+      POSTGRES_PASSWORD: nexus_password
+      POSTGRES_DB: nexus_employee_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus_user -d nexus_employee_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: nexus-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Microservices
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth_service/Dockerfile
+    container_name: nexus-auth-service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - AUTH_DATABASE_URL=postgresql://nexus_user:nexus_password@postgres:5432/nexus_employee_db
+      # JWT_SECRET MUST be set in a .env file or host environment before running.
+      # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+      # Copy .env.example to .env and fill in a randomly generated value.
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  department-service:
+    build:
+      context: .
+      dockerfile: services/department_service/Dockerfile
+    container_name: nexus-department-service
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      - DEPT_DATABASE_URL=postgresql://nexus_user:nexus_password@postgres:5432/nexus_employee_db
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  employee-service:
+    build:
+      context: .
+      dockerfile: services/employee_service/Dockerfile
+    container_name: nexus-employee-service
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    environment:
+      - EMP_DATABASE_URL=postgresql://nexus_user:nexus_password@postgres:5432/nexus_employee_db
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  attendance-service:
+    build:
+      context: .
+      dockerfile: services/attendance_service/Dockerfile
+    container_name: nexus-attendance-service
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    environment:
+      - ATTENDANCE_DATABASE_URL=postgresql://nexus_user:nexus_password@postgres:5432/nexus_employee_db
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  payroll-service:
+    build:
+      context: .
+      dockerfile: services/payroll_service/Dockerfile
+    container_name: nexus-payroll-service
+    restart: unless-stopped
+    ports:
+      - "8005:8005"
+    environment:
+      - PAYROLL_DATABASE_URL=postgresql://nexus_user:nexus_password@postgres:5432/nexus_employee_db
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api_gateway/Dockerfile
+    container_name: nexus-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - DEPARTMENT_SERVICE_URL=http://department-service:8002
+      - EMPLOYEE_SERVICE_URL=http://employee-service:8003
+      - ATTENDANCE_SERVICE_URL=http://attendance-service:8004
+      - PAYROLL_SERVICE_URL=http://payroll-service:8005
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - auth-service
+      - department-service
+      - employee-service
+      - attendance-service
+      - payroll-service
+      - redis
+
+  # Web Dashboard Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: nexus-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

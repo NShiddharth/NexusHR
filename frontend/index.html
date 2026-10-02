@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Microservices Enterprise Employee Management System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">
+        <i class="fa-solid fa-network-wired"></i>
+      </div>
+      <div class="brand-info">
+        <h2>NexusHR</h2>
+        <span>Microservices Mesh</span>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <a class="nav-item active" data-tab="dashboard" id="nav-dashboard">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Architecture & Stats</span>
+      </a>
+      <a class="nav-item" data-tab="employees" id="nav-employees">
+        <i class="fa-solid fa-users"></i>
+        <span>Employee Directory</span>
+      </a>
+      <a class="nav-item" data-tab="departments" id="nav-departments">
+        <i class="fa-solid fa-sitemap"></i>
+        <span>Departments & Org</span>
+      </a>
+      <a class="nav-item" data-tab="attendance" id="nav-attendance">
+        <i class="fa-solid fa-calendar-check"></i>
+        <span>Attendance & Leaves</span>
+      </a>
+      <a class="nav-item" data-tab="payroll" id="nav-payroll">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+        <span>Payroll & Comp</span>
+      </a>
+      <a class="nav-item" data-tab="events" id="nav-events">
+        <i class="fa-solid fa-terminal"></i>
+        <span>Event Bus Stream</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="user-card">
+        <img id="sidebar-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Avatar" class="user-avatar">
+        <div class="user-details" style="flex: 1; min-width: 0;">
+          <h4 id="sidebar-user-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Alexander Vance</h4>
+          <span id="sidebar-user-role" class="user-role-badge">ADMIN</span>
+        </div>
+        <button id="btn-logout" class="btn-logout" title="Sign Out / Switch Account" onclick="handleLogout()">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    
+    <!-- Top Header Bar -->
+    <header class="top-header">
+      <div class="header-title">
+        <h1 id="page-title">Microservices Architecture & Overview</h1>
+        <p id="page-subtitle">Real-time status of interconnected backend services and organizational metrics</p>
+      </div>
+
+      <div class="header-actions">
+        <div class="role-select-box">
+          <i class="fa-solid fa-user-shield" style="color: var(--accent-primary);"></i>
+          <select id="user-role-switcher">
+            <option value="admin">System Admin (Alex Vance)</option>
+            <option value="hrmanager">HR Manager (Sarah Jenkins)</option>
+            <option value="deptmanager">Dept Manager (David Chen)</option>
+            <option value="employee">Employee (Alex Rivera)</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="btn-quick-action" onclick="openModal('modal-add-employee')">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Employee</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Microservices Topology Banner -->
+    <div class="topology-banner">
+      <div class="topology-header">
+        <h3><i class="fa-solid fa-microchip" style="color: #38bdf8;"></i> Microservices Cluster Status</h3>
+        <span style="font-size: 11px; color: var(--text-muted);">Gateway: Port 8000 &bull; Auto-ping every 5s</span>
+      </div>
+      <div class="service-nodes-grid" id="service-nodes-container">
+        <!-- Dynamic nodes inserted via JS -->
+      </div>
+    </div>
+
+    <!-- TAB 1: DASHBOARD OVERVIEW -->
+    <section class="tab-content active" id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon indigo">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="stat-total-emp">8</h3>
+            <p>Total Headcount</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon emerald">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="stat-active-emp">0</h3>
+            <p>Active On Duty</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon amber">
+            <i class="fa-solid fa-building"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="stat-departments">5</h3>
+            <p>Active Departments</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="stat-monthly-payroll">$98,750</h3>
+            <p>Monthly Payroll Payout</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Attendance & Leave Widget -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+        <div class="table-container">
+          <div class="table-header-bar">
+            <h3><i class="fa-solid fa-business-time" style="color: #818cf8; margin-right: 8px;"></i> Attendance Quick Punch</h3>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+            Simulate instantaneous employee check-in or checkout through the Attendance Microservice.
+          </p>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <select id="quick-punch-employee" class="form-control" style="flex: 1;">
+              <!-- Populated dynamically -->
+            </select>
+            <button class="btn btn-success" onclick="handleQuickCheckIn()"><i class="fa-solid fa-right-to-bracket"></i> Check In</button>
+            <button class="btn btn-secondary" onclick="handleQuickCheckOut()"><i class="fa-solid fa-right-from-bracket"></i> Check Out</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header-bar">
+            <h3><i class="fa-solid fa-bolt" style="color: #ec4899; margin-right: 8px;"></i> Fast Automated Payroll Run</h3>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+            Trigger batch calculation and disbursement for all active employees for current period.
+          </p>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="month" id="batch-pay-month" class="form-control" value="2026-10" style="flex: 1;">
+            <button class="btn btn-primary" onclick="handleBatchPayroll()"><i class="fa-solid fa-play"></i> Run Payroll</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: EMPLOYEE DIRECTORY -->
+    <section class="tab-content" id="tab-employees">
+      <div class="table-container">
+        <div class="table-header-bar">
+          <div class="search-input-box">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
+            <input type="text" id="employee-search" placeholder="Search by name, ID, role or skill..." oninput="filterEmployees()">
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <select id="employee-dept-filter" class="form-control" style="width: 180px;" onchange="filterEmployees()">
+              <option value="">All Departments</option>
+            </select>
+
+            <select id="employee-status-filter" class="form-control" style="width: 150px;" onchange="filterEmployees()">
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="ON_LEAVE">On Leave</option>
+              <option value="TERMINATED">Terminated</option>
+            </select>
+
+            <button class="btn btn-primary" onclick="openModal('modal-add-employee')">
+              <i class="fa-solid fa-user-plus"></i> New Employee
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Employee ID</th>
+                <th>Department</th>
+                <th>Position</th>
+                <th>Status</th>
+                <th>Base Salary</th>
+                <th>Performance</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="employees-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DEPARTMENTS -->
+    <section class="tab-content" id="tab-departments">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h3>Organizational Structure & Department Budgets</h3>
+        <button class="btn btn-primary" onclick="openModal('modal-add-department')">
+          <i class="fa-solid fa-folder-plus"></i> Create Department
+        </button>
+      </div>
+      <div class="dept-grid" id="departments-grid-container">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- TAB 4: ATTENDANCE & LEAVES -->
+    <section class="tab-content" id="tab-attendance">
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Attendance Records -->
+        <div class="table-container">
+          <div class="table-header-bar">
+            <h3><i class="fa-solid fa-clock"></i> Daily Attendance Logs</h3>
+            <button class="btn btn-secondary" onclick="loadAttendance()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Date</th>
+                  <th>Check In</th>
+                  <th>Check Out</th>
+                  <th>Total Hours</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Leave Requests & Approvals -->
+        <div class="table-container">
+          <div class="table-header-bar">
+            <h3><i class="fa-solid fa-plane-departure"></i> Leave Requests</h3>
+            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="openModal('modal-apply-leave')">Apply</button>
+          </div>
+          <div id="leaves-list-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: PAYROLL & COMPENSATION -->
+    <section class="tab-content" id="tab-payroll">
+      <div class="table-container" style="margin-bottom: 24px;">
+        <div class="table-header-bar">
+          <div>
+            <h3>Generated Payslips & Payout Ledger</h3>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">Automated gross-to-net tax & benefit deductions</p>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <select id="payroll-period-select" class="form-control" style="width: 140px;" onchange="loadPayroll()">
+              <option value="2026-09">Sep 2026</option>
+              <option value="2026-10">Oct 2026</option>
+            </select>
+            <button class="btn btn-primary" onclick="handleBatchPayroll()"><i class="fa-solid fa-play"></i> Run Batch</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Payslip #</th>
+                <th>Employee</th>
+                <th>Period</th>
+                <th>Basic</th>
+                <th>Allowances</th>
+                <th>Tax Deducted</th>
+                <th>Net Salary</th>
+                <th>Status</th>
+                <th>Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="payroll-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: EVENT BUS STREAM -->
+    <section class="tab-content" id="tab-events">
+      <div class="table-container">
+        <div class="table-header-bar">
+          <div>
+            <h3><i class="fa-solid fa-satellite-dish" style="color: #38bdf8; margin-right: 8px;"></i> Distributed Event Stream</h3>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">Real-time inter-service async events broadcasted through the message bus</p>
+          </div>
+          <button class="btn btn-secondary" onclick="clearEventStream()"><i class="fa-solid fa-trash-can"></i> Clear Terminal</button>
+        </div>
+        <div class="terminal-window" id="event-stream-terminal">
+          <!-- Terminal lines -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: ADD EMPLOYEE -->
+  <div class="modal-overlay" id="modal-add-employee">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Create New Employee</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-add-employee')">&times;</button>
+      </div>
+      <form id="form-add-employee" onsubmit="handleCreateEmployee(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" id="new-emp-first-name" class="form-control" required placeholder="e.g. Liam">
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="new-emp-last-name" class="form-control" required placeholder="e.g. Gallagher">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Employee ID</label>
+            <input type="text" id="new-emp-id" class="form-control" required placeholder="e.g. EMP-009">
+          </div>
+          <div class="form-group">
+            <label>Work Email</label>
+            <input type="email" id="new-emp-email" class="form-control" required placeholder="liam@company.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Department</label>
+            <select id="new-emp-dept" class="form-control" required>
+              <option value="ENG">Engineering & Technology</option>
+              <option value="HR">Human Resources</option>
+              <option value="FIN">Finance & Accounting</option>
+              <option value="PROD">Product & Design</option>
+              <option value="SALES">Sales & Marketing</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Job Title</label>
+            <input type="text" id="new-emp-title" class="form-control" required placeholder="e.g. Senior Backend Engineer">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Annual Salary ($)</label>
+            <input type="number" id="new-emp-salary" class="form-control" value="115000" step="1000" required>
+          </div>
+          <div class="form-group">
+            <label>Skills (comma separated)</label>
+            <input type="text" id="new-emp-skills" class="form-control" placeholder="Python, Docker, FastApi, SQL">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-employee')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Employee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD DEPARTMENT -->
+  <div class="modal-overlay" id="modal-add-department">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Create New Department</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-add-department')">&times;</button>
+      </div>
+      <form id="form-add-department" onsubmit="handleCreateDepartment(event)">
+        <div class="form-group">
+          <label>Department Name</label>
+          <input type="text" id="new-dept-name" class="form-control" required placeholder="e.g. Data Science & AI Research">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Department Code</label>
+            <input type="text" id="new-dept-code" class="form-control" required placeholder="e.g. AI">
+          </div>
+          <div class="form-group">
+            <label>Annual Budget ($)</label>
+            <input type="number" id="new-dept-budget" class="form-control" value="800000" step="50000" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="new-dept-desc" class="form-control" rows="3" placeholder="Core mission and responsibilities..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-department')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Department</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: APPLY LEAVE -->
+  <div class="modal-overlay" id="modal-apply-leave">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Apply for Leave</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-apply-leave')">&times;</button>
+      </div>
+      <form id="form-apply-leave" onsubmit="handleApplyLeave(event)">
+        <div class="form-group">
+          <label>Employee</label>
+          <select id="leave-emp-select" class="form-control" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Leave Type</label>
+            <select id="leave-type-select" class="form-control" required>
+              <option value="ANNUAL">Annual Vacation</option>
+              <option value="SICK">Sick Leave</option>
+              <option value="CASUAL">Casual Leave</option>
+              <option value="MATERNITY">Maternity/Paternity</option>
+              <option value="UNPAID">Unpaid Leave</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" id="leave-start-date" class="form-control" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" id="leave-end-date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Reason</label>
+          <textarea id="leave-reason" class="form-control" rows="2" required placeholder="Detailed reason for leave..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-apply-leave')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Application</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN / AUTHENTICATION -->
+  <div class="modal-overlay" id="modal-login">
+    <div class="modal-box" style="max-width: 440px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div class="brand-icon" style="margin: 0 auto 14px; width: 50px; height: 50px; font-size: 24px; display: flex; align-items: center; justify-content: center; background: var(--accent-gradient); border-radius: 14px; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);">
+          <i class="fa-solid fa-network-wired" style="color: white;"></i>
+        </div>
+        <h2 style="font-size: 22px; font-weight: 800; color: #fff;">NexusHR Portal</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Sign in to access your employee management workspace</p>
+      </div>
+      
+      <div id="login-error-msg" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;"></div>
+
+      <form id="form-login" onsubmit="submitLoginForm(event)">
+        <div class="form-group">
+          <label><i class="fa-solid fa-user" style="color: var(--accent-primary); margin-right: 6px;"></i> Username or Email</label>
+          <input type="text" id="login-username" class="form-control" placeholder="admin / hrmanager / employee" required autofocus>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-lock" style="color: var(--accent-primary); margin-right: 6px;"></i> Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-login-submit" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+        <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; text-align: center;">One-Click Demo Accounts</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 8px 10px; justify-content: center;" onclick="fillAndSubmitLogin('admin', 'admin123')">
+            <i class="fa-solid fa-user-shield" style="color: #818cf8;"></i> Admin
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 8px 10px; justify-content: center;" onclick="fillAndSubmitLogin('hrmanager', 'hr123')">
+            <i class="fa-solid fa-user-gear" style="color: #38bdf8;"></i> HR Manager
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 8px 10px; justify-content: center;" onclick="fillAndSubmitLogin('deptmanager', 'manager123')">
+            <i class="fa-solid fa-user-tie" style="color: #34d399;"></i> Dept Manager
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 8px 10px; justify-content: center;" onclick="fillAndSubmitLogin('employee', 'emp123')">
+            <i class="fa-solid fa-user" style="color: #fbbf24;"></i> Employee
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
+</body>
+</html>

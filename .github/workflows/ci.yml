@@ -1,0 +1,99 @@
+name: Microservices CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Run Microservices Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pytest Suite
+        run: |
+          pytest tests/ -v --color=yes
+
+  docker-build:
+    name: Build & Validate Container Images
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Auth Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/auth_service/Dockerfile
+          push: false
+          tags: nexushr/auth-service:latest
+
+      - name: Build Department Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/department_service/Dockerfile
+          push: false
+          tags: nexushr/department-service:latest
+
+      - name: Build Employee Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/employee_service/Dockerfile
+          push: false
+          tags: nexushr/employee-service:latest
+
+      - name: Build Attendance Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/attendance_service/Dockerfile
+          push: false
+          tags: nexushr/attendance-service:latest
+
+      - name: Build Payroll Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/payroll_service/Dockerfile
+          push: false
+          tags: nexushr/payroll-service:latest
+
+      - name: Build API Gateway Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/api_gateway/Dockerfile
+          push: false
+          tags: nexushr/api-gateway:latest
+
+      - name: Build Frontend Dashboard Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./frontend/Dockerfile
+          push: false
+          tags: nexushr/frontend:latest
